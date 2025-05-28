@@ -1,19 +1,120 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2575.6">
-  <style type="text/css">
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+  <meta charset="UTF-8">
+  <title>TCX to GPX Converter</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 2rem;
+      text-align: center;
+    }
+    input[type="file"] {
+      margin-top: 1rem;
+    }
   </style>
 </head>
 <body>
-<p class="p1">&lt;!DOCTYPE html&gt;</p>
-<p class="p1">&lt;html lang="en"&gt;</p>
-<p class="p1">&lt;/html&gt;</p>
+  <h1>TCX to GPX Converter</h1>
+  <p>Select your <code>.tcx</code> file to convert it to <code>.gpx</code> (Garmin VIRB Edit compatible)</p>
+  <input type="file" id="tcxFile" accept=".tcx">
+  <script>
+    document.getElementById("tcxFile").addEventListener("change", function (event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function () {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(reader.result, "application/xml");
+
+        const GPX_NS = "http://www.topografix.com/GPX/1/1";
+        const XSI_NS = "http://www.w3.org/2001/XMLSchema-instance";
+        const GPXTPX_NS = "http://www.garmin.com/xmlschemas/TrackPointExtension/v1";
+
+        const gpx = document.implementation.createDocument(GPX_NS, "gpx", null);
+        const gpxRoot = gpx.documentElement;
+        gpxRoot.setAttribute("version", "1.1");
+        gpxRoot.setAttribute("creator", "TCX to GPX Web Converter");
+        gpxRoot.setAttributeNS(XSI_NS, "xsi:schemaLocation",
+          "http://www.topografix.com/GPX/1/1 " +
+          "http://www.topografix.com/GPX/1/1/gpx.xsd " +
+          "http://www.garmin.com/xmlschemas/TrackPointExtension/v1 " +
+          "http://www.garmin.com/xmlschemas/TrackPointExtensionv1.xsd");
+
+        const trk = gpx.createElementNS(GPX_NS, "trk");
+        const trkseg = gpx.createElementNS(GPX_NS, "trkseg");
+        trk.appendChild(trkseg);
+        gpxRoot.appendChild(trk);
+
+        const NS = "http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2";
+        const trackpoints = xmlDoc.getElementsByTagNameNS(NS, "Trackpoint");
+
+        for (let tp of trackpoints) {
+          const pos = tp.getElementsByTagNameNS(NS, "Position")[0];
+          if (!pos) continue;
+
+          const lat = pos.getElementsByTagNameNS(NS, "LatitudeDegrees")[0];
+          const lon = pos.getElementsByTagNameNS(NS, "LongitudeDegrees")[0];
+          if (!lat || !lon) continue;
+
+          const trkpt = gpx.createElementNS(GPX_NS, "trkpt");
+          trkpt.setAttribute("lat", lat.textContent);
+          trkpt.setAttribute("lon", lon.textContent);
+
+          const ele = tp.getElementsByTagNameNS(NS, "AltitudeMeters")[0];
+          if (ele) {
+            const eleNode = gpx.createElementNS(GPX_NS, "ele");
+            eleNode.textContent = ele.textContent;
+            trkpt.appendChild(eleNode);
+          }
+
+          const time = tp.getElementsByTagNameNS(NS, "Time")[0];
+          if (time) {
+            const timeNode = gpx.createElementNS(GPX_NS, "time");
+            timeNode.textContent = time.textContent;
+            trkpt.appendChild(timeNode);
+          }
+
+          const hr = tp.getElementsByTagNameNS(NS, "HeartRateBpm")[0]?.getElementsByTagNameNS(NS, "Value")[0];
+          const cad = tp.getElementsByTagNameNS(NS, "Cadence")[0];
+
+          if (hr || cad) {
+            const extensions = gpx.createElementNS(GPX_NS, "extensions");
+            const tpx = gpx.createElementNS(GPXTPX_NS, "gpxtpx:TrackPointExtension");
+
+            if (hr) {
+              const hrEl = gpx.createElementNS(GPXTPX_NS, "gpxtpx:hr");
+              hrEl.textContent = hr.textContent;
+              tpx.appendChild(hrEl);
+            }
+
+            if (cad) {
+              const cadEl = gpx.createElementNS(GPXTPX_NS, "gpxtpx:cad");
+              cadEl.textContent = cad.textContent;
+              tpx.appendChild(cadEl);
+            }
+
+            extensions.appendChild(tpx);
+            trkpt.appendChild(extensions);
+          }
+
+          trkseg.appendChild(trkpt);
+        }
+
+        const serializer = new XMLSerializer();
+        const gpxText = serializer.serializeToString(gpx);
+        const blob = new Blob([gpxText], { type: "application/gpx+xml" });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = file.name.replace(".tcx", ".gpx");
+        a.click();
+      };
+
+      reader.readAsText(file);
+    });
+  </script>
 </body>
 </html>

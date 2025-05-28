@@ -1,0 +1,136 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2575.6">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+  </style>
+</head>
+<body>
+<p class="p1">&lt;!DOCTYPE html&gt;</p>
+<p class="p1">&lt;html lang="en"&gt;</p>
+<p class="p1">&lt;head&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;meta charset="UTF-8"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;title&gt;TCX to GPX Converter&lt;/title&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;style&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>body {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>font-family: sans-serif;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>margin: 2rem;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>text-align: center;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>input[type="file"] {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>margin-top: 1rem;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;/style&gt;</p>
+<p class="p1">&lt;/head&gt;</p>
+<p class="p1">&lt;body&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;h1&gt;TCX to GPX Converter&lt;/h1&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;p&gt;Select your &lt;code&gt;.tcx&lt;/code&gt; file to convert it to &lt;code&gt;.gpx&lt;/code&gt; (Garmin VIRB Edit compatible)&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;input type="file" id="tcxFile" accept=".tcx"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>document.getElementById("tcxFile").addEventListener("change", function (event) {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const file = event.target.files[0];</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if (!file) return;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>const reader = new FileReader();</p>
+<p class="p1"><span class="Apple-converted-space">      </span>reader.onload = function () {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const parser = new DOMParser();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const xmlDoc = parser.parseFromString(reader.result, "application/xml");</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>const GPX_NS = "http://www.topografix.com/GPX/1/1";</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const XSI_NS = "http://www.w3.org/2001/XMLSchema-instance";</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const GPXTPX_NS = "http://www.garmin.com/xmlschemas/TrackPointExtension/v1";</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>const gpx = document.implementation.createDocument(GPX_NS, "gpx", null);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const gpxRoot = gpx.documentElement;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>gpxRoot.setAttribute("version", "1.1");</p>
+<p class="p1"><span class="Apple-converted-space">        </span>gpxRoot.setAttribute("creator", "TCX to GPX Web Converter");</p>
+<p class="p1"><span class="Apple-converted-space">        </span>gpxRoot.setAttributeNS(XSI_NS, "xsi:schemaLocation",</p>
+<p class="p1"><span class="Apple-converted-space">          </span>"http://www.topografix.com/GPX/1/1 " +</p>
+<p class="p1"><span class="Apple-converted-space">          </span>"http://www.topografix.com/GPX/1/1/gpx.xsd " +</p>
+<p class="p1"><span class="Apple-converted-space">          </span>"http://www.garmin.com/xmlschemas/TrackPointExtension/v1 " +</p>
+<p class="p1"><span class="Apple-converted-space">          </span>"http://www.garmin.com/xmlschemas/TrackPointExtensionv1.xsd");</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>const trk = gpx.createElementNS(GPX_NS, "trk");</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const trkseg = gpx.createElementNS(GPX_NS, "trkseg");</p>
+<p class="p1"><span class="Apple-converted-space">        </span>trk.appendChild(trkseg);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>gpxRoot.appendChild(trk);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>const NS = "http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2";</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const trackpoints = xmlDoc.getElementsByTagNameNS(NS, "Trackpoint");</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>for (let tp of trackpoints) {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const pos = tp.getElementsByTagNameNS(NS, "Position")[0];</p>
+<p class="p1"><span class="Apple-converted-space">          </span>if (!pos) continue;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>const lat = pos.getElementsByTagNameNS(NS, "LatitudeDegrees")[0];</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const lon = pos.getElementsByTagNameNS(NS, "LongitudeDegrees")[0];</p>
+<p class="p1"><span class="Apple-converted-space">          </span>if (!lat || !lon) continue;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>const trkpt = gpx.createElementNS(GPX_NS, "trkpt");</p>
+<p class="p1"><span class="Apple-converted-space">          </span>trkpt.setAttribute("lat", lat.textContent);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>trkpt.setAttribute("lon", lon.textContent);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>const ele = tp.getElementsByTagNameNS(NS, "AltitudeMeters")[0];</p>
+<p class="p1"><span class="Apple-converted-space">          </span>if (ele) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const eleNode = gpx.createElementNS(GPX_NS, "ele");</p>
+<p class="p1"><span class="Apple-converted-space">            </span>eleNode.textContent = ele.textContent;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>trkpt.appendChild(eleNode);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>const time = tp.getElementsByTagNameNS(NS, "Time")[0];</p>
+<p class="p1"><span class="Apple-converted-space">          </span>if (time) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const timeNode = gpx.createElementNS(GPX_NS, "time");</p>
+<p class="p1"><span class="Apple-converted-space">            </span>timeNode.textContent = time.textContent;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>trkpt.appendChild(timeNode);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>const hr = tp.getElementsByTagNameNS(NS, "HeartRateBpm")[0]?.getElementsByTagNameNS(NS, "Value")[0];</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const cad = tp.getElementsByTagNameNS(NS, "Cadence")[0];</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>if (hr || cad) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const extensions = gpx.createElementNS(GPX_NS, "extensions");</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const tpx = gpx.createElementNS(GPXTPX_NS, "gpxtpx:TrackPointExtension");</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (hr) {</p>
+<p class="p1"><span class="Apple-converted-space">              </span>const hrEl = gpx.createElementNS(GPXTPX_NS, "gpxtpx:hr");</p>
+<p class="p1"><span class="Apple-converted-space">              </span>hrEl.textContent = hr.textContent;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>tpx.appendChild(hrEl);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (cad) {</p>
+<p class="p1"><span class="Apple-converted-space">              </span>const cadEl = gpx.createElementNS(GPXTPX_NS, "gpxtpx:cad");</p>
+<p class="p1"><span class="Apple-converted-space">              </span>cadEl.textContent = cad.textContent;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>tpx.appendChild(cadEl);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>extensions.appendChild(tpx);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>trkpt.appendChild(extensions);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>trkseg.appendChild(trkpt);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>const serializer = new XMLSerializer();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const gpxText = serializer.serializeToString(gpx);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const blob = new Blob([gpxText], { type: "application/gpx+xml" });</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const url = URL.createObjectURL(blob);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>const a = document.createElement("a");</p>
+<p class="p1"><span class="Apple-converted-space">        </span>a.href = url;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>a.download = file.name.replace(".tcx", ".gpx");</p>
+<p class="p1"><span class="Apple-converted-space">        </span>a.click();</p>
+<p class="p1"><span class="Apple-converted-space">      </span>};</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>reader.readAsText(file);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>});</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;/script&gt;</p>
+<p class="p1">&lt;/body&gt;</p>
+<p class="p1">&lt;/html&gt;</p>
+</body>
+</html>
